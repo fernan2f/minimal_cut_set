@@ -4,6 +4,52 @@ import numpy as np
 import itertools as it
 import warnings
 
+
+matrix_incid = np.genfromtxt('matrix_incid_6_9.csv', delimiter=',', dtype=int)
+vector_conf = np.genfromtxt('vector_conf_6_9.csv', delimiter=',')
+
+# Elimina paralelos
+def deleteParalels():
+    global matrix_incid, vector_conf # Se define que estas variables son "globales" para así tener acceso a ellas desde la función
+    i=0
+    j=0
+    while(i<matrix_incid[0,:].size and len(vector_conf)>1): # si i es menor que la cantidad de filas y el largo del vector de confiabilidad es > 1 se continua el ciclo hasta que alguna no se cumpla
+        j=0     
+        actual_col = matrix_incid[:,i] # La columna la cual se está comparando con todas las demás actualmente
+        while(j<len(vector_conf)-1):
+            check_col = matrix_incid[:,j] # Esta es la columna que va iterando
+            if(np.dot(actual_col,check_col) == 2 and i!=j): # Si el producto punto es = 2 y no es la misma columna (i!=j)
+                matrix_incid = np.delete(matrix_incid, j ,1) # Se elimina la columna que se encontró que era igual a la actual (actual_col)
+                vector_conf[i] = (1-(1-vector_conf[i])*(1-vector_conf[j])) # Se aplica la funcion de estructura y se guarda en la posicion de la primera columna (i) del vector de confiabilidad
+                vector_conf = np.delete(vector_conf,j,0) # Se elimina la posicion del vector de confiabilidad (j)
+                j=0
+            else: # Si el producto punto no es = 2 o es la misma columna (i==j)
+                j+=1    
+            if(j>=len(vector_conf)-1): # Mientras j sea mayor que el largo del vector de confiabilidad se itera i
+                i+=1
+
+          
+
+# Elimina series  
+def deleteSeries():
+    global matrix_incid, vector_conf # Se define que estas variables son "globales" para así tener acceso a ellas desde la función
+    i=0
+    while(i<matrix_incid[:,0].size): # Mientras i sea menor que la cantidad de columnas
+        actual_row = matrix_incid[i,:] # Fila actual que se tiene seleccionada
+        if(sum(actual_row) == 2 and i!= 0 and i!= matrix_incid[:,0].size -1):  # Si la suma de la fila actual da igual a 2 significa que ese nodo está entre dos nodos más por lo tanto se encuentran en serie
+        # if(sum(actual_row) == 2 ):  # Si la suma de la fila actual da igual a 2 significa que ese nodo está entre dos nodos más por lo tanto se encuentran en serie
+            indexes = np.where(actual_row == 1) # Aqui se obtienen los indices de los 1 dentro de la fila actual
+            matrix_incid  = np.delete(matrix_incid, i, 0) # Aqui se elimina la fila actual (la cúal sumó 2)
+            matrix_incid[:,indexes[0][0]] = matrix_incid[:,indexes[0][0]] + matrix_incid[:,indexes[0][1]] # Aquí se suma las columnas de los indices donde se encontraron los 1 ( que se guardaron en la variable "indexes") y el resultado se guarda en la posición del primer 1 encontrado
+            matrix_incid = np.delete(matrix_incid, indexes[0][1], 1) # Se elimina la columna del ultimo uno encontrado dentro de la fila 
+            vector_conf[indexes[0][0]] = vector_conf[indexes[0][0]] * vector_conf[indexes[0][1]] # Se aplica la función de estructura y se guardan el resultado en la primera posición
+            vector_conf = np.delete(vector_conf, indexes[0][1] , 0 ) # Se elimina la ultima posición de las 2 encontradas dentro del vector de confiabilidad
+            deleteParalels() # Se ejecuta la función de eliminar paralelos debido a posibles paralelos que pueden aparecer al eliminar enlaces en serie
+            i=0
+        # 
+        i+=1
+
+        
 def incidToConectMatrix(matrix, vector_conf):
     initial_matrix = np.zeros([len(matrix[:,0]),len(matrix[:,0])], dtype=int)
     for i in range(0,len(matrix[0,:])):
@@ -11,9 +57,8 @@ def incidToConectMatrix(matrix, vector_conf):
         # print(indexes)
         initial_matrix[indexes[0]][indexes[1]] = i+1
         initial_matrix[indexes[1]][indexes[0]] = i+1
-    
-    print("Matrix de conectividad")
-    print(initial_matrix)
+    # print("Matrix de conectividad")
+    # print(initial_matrix)
     return initial_matrix;
 
 def getNumbers(array):
@@ -89,14 +134,6 @@ def deleteCombination(matrix, combinations):
             j+=1
         i+=1
                     
-    # for i in range(0,len(delete1)):
-    #     for j in range(0,len(combinations)):
-    #         if(j < len(combinations)):
-    #             aux1 = [delete1[i]]
-    #             aux2 = combinations[j]
-    #             if(aux1 == aux2):
-    #                 # print("Es igual en la posición ", j , "del array de combinaciones")
-    #                 del copyCombinations[j]
     return copyCombinations
 
 
@@ -107,6 +144,17 @@ def ignoreWarning():
 def getMCS(matrix,combinations):
     matrixInicial = matrix
     final_mcs = []
+    
+    # Aquí obtengo los MCS de la primera y ultima fila 
+    if(len(matrix)>=2):
+        first_column = matrix[:,0]
+        last_column = matrix[:,len(matrix)-1]
+        final_mcs.append(getNumbers(first_column))
+        final_mcs.append(getNumbers(last_column))
+    else:
+        first_column = matrix[:,0]
+        final_mcs.append(getNumbers(first_column))
+    
     # for i in range(3,4):
     for i in range(0,len(combinations)):
         aux = np.copy(matrixInicial)
@@ -130,38 +178,28 @@ def getMCS(matrix,combinations):
             firstRow = False
         
         
-        print("MCS")
-        print(array_mcs)
+        # print("MCS")
+        # print(array_mcs)
         final_mcs.append(array_mcs)
         
     return final_mcs # VA FALTANDO IR GUARDANDO LOS MCS JUNTO CON LA COMBINACION ASOCIADA Y RETORNARLO (SERÁ NECESARIO PONER LA COMBINACION ASOCIADA?)
         
 
-incid_matrix = np.genfromtxt('matrix_incid_5_8.csv', delimiter=',', dtype=int)
-vector_conf = np.genfromtxt('vector_conf_5_8.csv', delimiter=',')
-matrix = incidToConectMatrix(incid_matrix,vector_conf)
-
-mcs_array = []
-# Aquí obtengo los MCS de la primera y ultima fila 
-if(len(matrix)>=2):
-    first_column = matrix[:,0]
-    last_column = matrix[:,len(matrix)-1]
-    mcs_array.append(getNumbers(first_column))
-    mcs_array.append(getNumbers(last_column))
-else:
-    first_column = matrix[:,0]
-    mcs_array.append(getNumbers(first_column))
 
 
+
+deleteParalels() 
+deleteSeries()
+matrix = incidToConectMatrix(matrix_incid,vector_conf)
 ignoreWarning() #Para eliminar los "warnings" que me salian por consola por algunas librerias
 
-print("MCS iniciales",mcs_array)
+
 arrayCombinations = getCombination(matrix)
 print("Combinaciones antes de eliminar",arrayCombinations)
 arrayCombinations = deleteCombination(matrix,arrayCombinations) #Aquí paso las combinaciones totales y me las entrega eliminando las que no correspondan
 print("Combinaciones despues de eliminar",arrayCombinations)
-
-mcs_array.append(getMCS(matrix,arrayCombinations))
+mcs_array = getMCS(matrix,arrayCombinations)
+print("Minimal cut sets finales")
 print(mcs_array)
 
 
