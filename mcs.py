@@ -1,4 +1,5 @@
 from array import array
+from calendar import c
 from math import comb
 import numpy as np
 import itertools as it
@@ -69,6 +70,14 @@ def getNumbers(array):
             aux.append(array[i])
         i+=1
     return aux
+
+def calculateConf(mcs_array):
+    combinations = []
+    for i in range(0,len(mcs_array)):
+        for j in range(0,len(mcs_array)):
+            return 0;
+    return 0; 
+    
             
 def getCombination(matrix):
     aux = []
@@ -84,7 +93,6 @@ def getCombination(matrix):
         for j in range(0,len(combination)):
             aux.append(list(combination[j]))
         i+=1
-    
     return aux
 
 def deleteCombination(matrix, combinations):
@@ -140,7 +148,57 @@ def deleteCombination(matrix, combinations):
 def ignoreWarning():
     return warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
     
+def getConfiability(mcs):
+    numbers = np.arange(len(mcs))
+    # print(mcs)
+    # print(numbers)
+    subsets = []
+    combinations = []
+    
+    for x in range(len(mcs) + 1):
+        for subset in it.combinations(numbers, x):
+            subsets.append(list(subset))
+    subsets.remove([])
+    # print("Subsets")
+    # print(subsets)
+    
 
+    for i in range(0,len(subsets)):
+        aux = []
+        for j in subsets[i]:
+            for k in range(0,len(mcs[j])):
+                if mcs[j][k] not in aux:
+                    aux.append(mcs[j][k])
+        combinations.append(aux)
+    # print("Combinations")
+    # print(combinations)
+    
+    confiability = 0
+    resta = False
+    subsetAnterior = subsets[0]
+    cotas = 1
+    for i in range(0,len(combinations)):
+        times = 1
+       
+        if(len(subsets[i]) != len(subsetAnterior)):
+            resta = not resta
+            if(cotas < 5):
+                print('Cota ', cotas)
+                print(1-confiability)
+                cotas+=1
+        combiActual = combinations[i]
+        for j in combinations[i]:
+            times*=(1-vector_conf[j-1])
+        if(resta):
+            confiability-=(times)
+        else:
+            confiability+=(times)
+        
+            
+        subsetAnterior =  subsets[i]
+    print("Confiabilidad")
+    print(1-confiability)
+    
 def getMCS(matrix,combinations):
     matrixInicial = matrix
     final_mcs = []
@@ -170,8 +228,6 @@ def getMCS(matrix,combinations):
                 if(firstRow):
                     if(aux[0][l]!=-1 and aux[0][l]!=0):
                         array_mcs.append(aux[0][l])
-                        
-                    
                 if(aux[k][l]!=-1 and aux[k][l]!=0):
                     array_mcs.append(aux[k][l])
             
@@ -182,25 +238,30 @@ def getMCS(matrix,combinations):
         # print(array_mcs)
         final_mcs.append(array_mcs)
         
-    return final_mcs # VA FALTANDO IR GUARDANDO LOS MCS JUNTO CON LA COMBINACION ASOCIADA Y RETORNARLO (SERÁ NECESARIO PONER LA COMBINACION ASOCIADA?)
+    return final_mcs 
         
 
 
 
-
+# Eliminaciones serie paralelo
 deleteParalels() 
 deleteSeries()
-matrix = incidToConectMatrix(matrix_incid,vector_conf)
+matrix = incidToConectMatrix(matrix_incid,vector_conf) # Transformo matriz de incidencia a matriz de conectividad
+# print(matrix)
+
 ignoreWarning() #Para eliminar los "warnings" que me salian por consola por algunas librerias
 
 
 arrayCombinations = getCombination(matrix)
-print("Combinaciones antes de eliminar",arrayCombinations)
+# print("Combinaciones antes de eliminar",arrayCombinations)
 arrayCombinations = deleteCombination(matrix,arrayCombinations) #Aquí paso las combinaciones totales y me las entrega eliminando las que no correspondan
-print("Combinaciones despues de eliminar",arrayCombinations)
+# print("Combinaciones despues de eliminar",arrayCombinations)
 mcs_array = getMCS(matrix,arrayCombinations)
-print("Minimal cut sets finales")
-print(mcs_array)
+# print("Minimal cut sets finales")
+# print(mcs_array)
+
+print(vector_conf)
+getConfiability(mcs_array)
 
 
 
