@@ -51,7 +51,7 @@ def deleteSeries():
         i+=1
 
         
-def incidToConectMatrix(matrix, vector_conf):
+def incidToConectMatrix(matrix): # Esta función genera la matriz de conectividad a partir de la matriz de incidencia ,  recibe cómo parámetro la matriz de incidencia 
     initial_matrix = np.zeros([len(matrix[:,0]),len(matrix[:,0])], dtype=int)
     for i in range(0,len(matrix[0,:])):
         indexes = np.where(matrix[:,i] == 1)[0]
@@ -62,7 +62,7 @@ def incidToConectMatrix(matrix, vector_conf):
     # print(initial_matrix)
     return initial_matrix;
 
-def getNumbers(array):
+def getNumbers(array): # Esta función retorna los números distintos de 0 en un array , recibe cómo parametro un array de números
     aux = []
     i = 0
     while(i < len(array)-1):
@@ -70,16 +70,8 @@ def getNumbers(array):
             aux.append(array[i])
         i+=1
     return aux
-
-def calculateConf(mcs_array):
-    combinations = []
-    for i in range(0,len(mcs_array)):
-        for j in range(0,len(mcs_array)):
-            return 0;
-    return 0; 
     
-            
-def getCombination(matrix):
+def getCombination(matrix): # Obtiene todas las combinaciones posibles , recibe cómo parámetro la matriz de conectividad 
     aux = []
     i = 1
     possible_combinations = list(range(1,len(matrix)-1))
@@ -95,9 +87,9 @@ def getCombination(matrix):
         i+=1
     return aux
 
-def deleteCombination(matrix, combinations):
+def deleteCombination(matrix, combinations): # Esta función elimina todas las combinaciones que no son un MCS , recibe cómo parámetro la matriz de conectividad y un array con las combinaciones
   
-#El vector "delete1" obtiene las combinaciones a eliminar debido a que la primera fila es 0 (entonces obtiene los indices a eliminar)
+    #El vector "delete1" obtiene las combinaciones a eliminar debido a que la primera fila es 0 (entonces obtiene los indices a eliminar)
     delete1 = matrix[0,:] 
     delete1 = np.delete(delete1,0)
     delete1 = np.delete(delete1,len(delete1)-1)
@@ -120,13 +112,12 @@ def deleteCombination(matrix, combinations):
     copyCombinations = np.copy(combinations).tolist() #Creo la copia porqe estoy eliminando elementos , así no tengo problemas al usar el len(combinations)
     
     #Aquí elimino las combinaciones exclusivamente en las que la ultima columna era != 0
-    for i in range(0,len(combinations)):
-        if(len(combinations[i])>len(delete2)):
-            break;
+    for i in range(0,len(combinations)): 
         equals = (delete2 == combinations[i]).all()
         if(equals):
             # print("Es igual en la posición ", i , "del array de combinaciones")
             del copyCombinations[i]
+            break;
             
     #Aquí elimino las combinaciones en las cuales la primera fila era 0
     i=0
@@ -148,7 +139,8 @@ def deleteCombination(matrix, combinations):
 def ignoreWarning():
     return warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning) 
     
-def getConfiability(mcs):
+def getConfiability(mcs): # Esta función calcula la confiabilidad de la red , obtiene cómo parámetro un array con los MCS de la red
+
     numbers = np.arange(len(mcs))
     # print(mcs)
     # print(numbers)
@@ -179,7 +171,6 @@ def getConfiability(mcs):
     cotas = 1
     for i in range(0,len(combinations)):
         times = 1
-       
         if(len(subsets[i]) != len(subsetAnterior)):
             resta = not resta
             if(cotas < 5):
@@ -193,13 +184,13 @@ def getConfiability(mcs):
             confiability-=(times)
         else:
             confiability+=(times)
-        
             
-        subsetAnterior =  subsets[i]
-    print("Confiabilidad")
+        subsetAnterior =  subsets[i] 
+    
+    print("Confiabilidad final")
     print(1-confiability)
     
-def getMCS(matrix,combinations):
+def getMCS(matrix,combinations): # Esta función obtiene todos los MCS recibe cómo parametros la matriz de conectividad y un array con las combinaciones 
     matrixInicial = matrix
     final_mcs = []
     
@@ -213,7 +204,6 @@ def getMCS(matrix,combinations):
         first_column = matrix[:,0]
         final_mcs.append(getNumbers(first_column))
     
-    # for i in range(3,4):
     for i in range(0,len(combinations)):
         aux = np.copy(matrixInicial)
         array_mcs = []
@@ -238,30 +228,41 @@ def getMCS(matrix,combinations):
         # print(array_mcs)
         final_mcs.append(array_mcs)
         
+    if [] in final_mcs:
+        final_mcs.remove([])   
     return final_mcs 
         
 
 
-
+print("------------------------")
 # Eliminaciones serie paralelo
+print("Cantidad de nodos pre SP")
+print(len(matrix_incid[:,0]))
+print("Cantidad de enlaces pre SP")
+print(len(matrix_incid[0,:]))
+print("------------------------")
 deleteParalels() 
 deleteSeries()
-matrix = incidToConectMatrix(matrix_incid,vector_conf) # Transformo matriz de incidencia a matriz de conectividad
-# print(matrix)
+matrix = incidToConectMatrix(matrix_incid) # Transformo matriz de incidencia a matriz de conectividad
+print("Cantidad de nodos post SP")
+print(len(matrix_incid[:,0]))
+print("Cantidad de enlaces post SP")
+print(len(matrix_incid[0,:]))
 
 ignoreWarning() #Para eliminar los "warnings" que me salian por consola por algunas librerias
 
-
-arrayCombinations = getCombination(matrix)
-# print("Combinaciones antes de eliminar",arrayCombinations)
+print("------------------------")
+arrayCombinations = getCombination(matrix) #Aquí obtengo todas las combinaciones posibles 
+print("Combinaciones antes de eliminar",arrayCombinations)
 arrayCombinations = deleteCombination(matrix,arrayCombinations) #Aquí paso las combinaciones totales y me las entrega eliminando las que no correspondan
-# print("Combinaciones despues de eliminar",arrayCombinations)
-mcs_array = getMCS(matrix,arrayCombinations)
-# print("Minimal cut sets finales")
-# print(mcs_array)
+print("Combinaciones despues de eliminar",arrayCombinations)
+print("------------------------")
+mcs_array = getMCS(matrix,arrayCombinations) # Aquí obtengo los MCS finales
+print("Minimal cut sets finales")
+print(mcs_array)
+print("------------------------")
 
-print(vector_conf)
-getConfiability(mcs_array)
+getConfiability(mcs_array) # Esta función me printea y calcula los valores de confiabilidad de la red junto con sus cotas (primeras 4 cotas)
 
 
 
